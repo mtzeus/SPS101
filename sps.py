@@ -1,95 +1,83 @@
-import os
-import argparse
-import logging
 import socket
-import requests
+import threading
+import argparse
+import re
 
-from datetime import datetime
-from urllib.parse import urlparse
-
-# Configuração do logger
-logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
-logger = logging.getLogger(__name__)
-
-# Constantes
-NVD_API_URL = "https://services.nvd.nist.gov/rest/json/cve/1.0"
-DEFAULT_PORT_RANGE = "1-10000"
-
-def scan_ports(host, port_range):
-    open_ports = []
-    for port in port_range:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        result = sock.connect_ex((host, port))
-        if result == 0:
-            open_ports.append(port)
-        sock.close()
-    return open_ports
-
-def get_active_hosts(network):
-    active_hosts = []
-    for host in network:
-        response = os.system("ping -c 1 " + host)
-        if response == 0:
-            active_hosts.append(host)
-    return active_hosts
-
-def check_vulnerabilities(service, version):
-    vulnerabilities = []
+def scan_port(target_host, target_port):
     try:
-        response = requests.get(f"{NVD_API_URL}/cve?cpeMatchString={service}:{version}")
-        response.raise_for_status()  # Lança uma exceção em caso de erro HTTP
-        data = response.json()
-        if "result" in data:
-            vulnerabilities = data["result"]["CVE_Items"]
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Erro na consulta de vulnerabilidades: {e}")
-    except (KeyError, ValueError) as e:
-        logger.error(f"Erro ao processar resposta da API: {e}")
-    return vulnerabilities
-
-def generate_report(results):
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"report_{timestamp}.txt"
-    with open(filename, "w") as file:
-        for host, port, vulnerabilities in results:
-            file.write(f"Host: {host}, Port: {port}\n")
-            for vulnerability in vulnerabilities:
-                cve_id = vulnerability["cve"]["CVE_data_meta"]["ID"]
-                description = vulnerability["cve"]["description"]["description_data"][0]["value"]
-                file.write(f"\tCVE ID: {cve_id}\n")
-                file.write(f"\tDescription: {description}\n\n")
-            file.write("\n")
-    logger.info(f"Relatório gerado: {filename}")
-
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="Scanner de vulnerabilidades de rede")
-    parser.add_argument("target", help="Endereço IP ou URL do alvo")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Exibir informações de logging adicionais")
-    return parser.parse_args()
+        # Cria um socket TCP
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # Define um timeout para a conexão
+        sock.settimeout(1)
+        # Tenta se conectar ao host na porta especificada
+        result = sock.connect_ex((target_host, target_port))
+        if result == 0:
+            print(f"[+] Porta {target_port} aberta")
+        sock.close()
+    except KeyboardInterrupt:
+        print("\n[-] Programa interrompido pelo usuário.")
+        exit()
+    except socket.error:
+        print(f"[-] Falha ao conectar-se a {target_host}:{target_port}")
+        exit()
 
 def main():
-    args = parse_arguments()
-    target = args.target
-    parsed_url = urlparse(target)
-    if parsed_url.netloc:
-        target = socket.gethostbyname(parsed_url.netloc)
+    # Apresentação em ASCII
+    ascii_art = r''' 
+   _____ _____   _____ __  ___  __ 
+  / ____|  __ \ / ____/_ |/ _ \/_ |
+ | (___ | |__) | (___  | | | | || |
+  \___ \|  ___/ \___ \ | | | | || |
+  ____) | |     ____) || | |_| || |
+ |_____/|_|    |_____/ |_|\___/ |_|v1. by mtz
+                                                                      
+'''
+    print(ascii_art)
 
-    port_range = list(range(1, 10001))
-    open_ports = scan_ports(target, port_range)
-    active_hosts = get_active_hosts([target])
+    # Solicita o alvo e o intervalo de portas ao usuário
+    target_host = input("Digite o alvo (sem http/https) www.github.com): ")
+    port_range = input("Digite o intervalo de portas (exemplo: 1-1000): ")
 
-    if not active_hosts:
-        logger.warning("Nenhum host ativo encontrado.")
-        return
+    # Verifica se o intervalo de portas foi especificado corretamente
+    match = re.match(r"(\d+)-(\d+)", port_range)
+    if not match:
+        print("[-] Intervalo de portas inválido. Formato esperado: <porta_inicial>-<porta_final>")
+        exit()
+    start_port = int(match.group(1))
+    end_port = int(match.group(2))
 
-    results = []
-    for host in active_hosts:
-        for port in open_ports:
-            vulnerabilities = check_vulnerabilities(f"tcp/{port}", "")
-            results.append((host, port, vulnerabilities))
-    
-    generate_report(results)
+    try:
+        # Obtém o endereço IP do host fornecido
+        target_ip = socket.gethostbyname(target_host)
+    except socket.gaierror:
+        print("[-] Falha ao obter o endereço IP do host.")
+        exit()
 
-if __name__ == "__main__":
+    print(f"[*] Iniciando varredura de portas em {target_host} ({target_ip})...")
+    print(f"[*] Intervalo de portas: {start_port}-{end_port}")
+
+    # Cria uma lista de threads
+    threads = []
+    # Divide o intervalo de portas igualmente entre as threads
+    num_threads = min(end_port - start_port + 1, 100)  # Limita o número máximo de threads a 100
+    ports_per_thread = (end_port - start_port + 1) // num_threads
+
+    # Cria e inicia as threads
+    for i in range(num_threads):
+        start = start_port + (i * ports_per_thread)
+        end = start + ports_per_thread - 1
+        if i == num_threads - 1:  # Última thread pode ficar com as portas restantes
+            end = end_port
+        for port in range(start, end + 1):
+            thread = threading.Thread(target=scan_port, args=(target_ip, port))
+            thread.start()
+            threads.append(thread)
+
+    # Aguarda todas as threads finalizarem
+    for thread in threads:
+        thread.join()
+
+    print("[*] Varredura de portas concluída.")
+
+if __name__ == '__main__':
     main()
