@@ -1,7 +1,14 @@
 import socket
 import threading
-import argparse
 import re
+
+def get_ip_address(target_host):
+    try:
+        ip_address = socket.gethostbyname(target_host)
+        return ip_address
+    except socket.gaierror:
+        print("[-] Erro ao obter o endereço IP do alvo.")
+        exit()
 
 def scan_port(target_host, target_port):
     try:
@@ -23,44 +30,40 @@ def scan_port(target_host, target_port):
 
 def main():
     # Apresentação em ASCII
-    ascii_art = r''' 
+    ascii_art = ''' 
    _____ _____   _____ __  ___  __ 
   / ____|  __ \ / ____/_ |/ _ \/_ |
  | (___ | |__) | (___  | | | | || |
   \___ \|  ___/ \___ \ | | | | || |
   ____) | |     ____) || | |_| || |
  |_____/|_|    |_____/ |_|\___/ |_|v1. by mtz
-                                                                      
-'''
+                                                          
+    '''
     print(ascii_art)
 
-    # Solicita o alvo e o intervalo de portas ao usuário
-    target_host = input("Digite o alvo (sem http/https) www.github.com): ")
-    port_range = input("Digite o intervalo de portas (exemplo: 1-1000): ")
+    # Solicitação de entrada
+    target_host = input("Digite o alvo (sem http/https) exemplp: www.github.com): ")
+    target_host = re.sub(r"https?://", "", target_host)  # Remove o prefixo "http://" ou "https://"
+    target_ip = get_ip_address(target_host)
+    start_port = int(input("Digite a porta inicial: "))
+    end_port = int(input("Digite a porta final: "))
 
-    # Verifica se o intervalo de portas foi especificado corretamente
-    match = re.match(r"(\d+)-(\d+)", port_range)
-    if not match:
-        print("[-] Intervalo de portas inválido. Formato esperado: <porta_inicial>-<porta_final>")
-        exit()
-    start_port = int(match.group(1))
-    end_port = int(match.group(2))
+    # Verifica se a porta final excede o limite de 65535
+    if end_port > 65535:
+        print("[-] A porta final excede o limite de 65535. Definindo a porta final como 65535.")
+        end_port = 65535
 
-    try:
-        # Obtém o endereço IP do host fornecido
-        target_ip = socket.gethostbyname(target_host)
-    except socket.gaierror:
-        print("[-] Falha ao obter o endereço IP do host.")
-        exit()
+    num_threads = int(input("Digite o número de threads: "))
 
     print(f"[*] Iniciando varredura de portas em {target_host} ({target_ip})...")
     print(f"[*] Intervalo de portas: {start_port}-{end_port}")
+    print(f"[*] Número de threads: {num_threads}")
 
     # Cria uma lista de threads
     threads = []
     # Divide o intervalo de portas igualmente entre as threads
-    num_threads = min(end_port - start_port + 1, 100)  # Limita o número máximo de threads a 100
-    ports_per_thread = (end_port - start_port + 1) // num_threads
+    port_range = end_port - start_port + 1
+    ports_per_thread = port_range // num_threads
 
     # Cria e inicia as threads
     for i in range(num_threads):
