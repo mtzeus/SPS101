@@ -8,9 +8,9 @@
   <p>Este é um script em Python que realiza a varredura de portas em um host-alvo. Ele verifica se determinadas portas estão abertas.</p>
   <h2>Uso</h2>
   <ol>
-    <li>Clone o repositório ou faça o download do arquivo <code>sps101.py</code>.</li>
+    <li>Clone o repositório ou faça o download do arquivo <code>sps.py</code>.</li>
     <li>Certifique-se de ter o Python 3 instalado.</li>
-    <li>Execute o script no terminal com o comando <code>python sps101.py</code>.</li>
+    <li>Execute o script no terminal com o comando <code>python sps.py</code>.</li>
     <li>Insira o alvo (exemplo: exemplo.com), a porta inicial, a porta final e o número de threads.</li>
     <li>Aguarde a conclusão da varredura.</li>
     <li>Verifique a saída para ver quais portas estão abertas.</li>
@@ -21,7 +21,7 @@
     <li>Módulo <code>socket</code></li>
   </ul>
   <h2>Exemplo</h2>
-  <pre><code>$ python sps101.py
+  <pre><code>$ python sps.py
 Digite o alvo (exemplo: exemplo.com): exemplo.com
 Digite a porta inicial: 1
 Digite a porta final: 1000
