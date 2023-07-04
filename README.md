@@ -1,64 +1,46 @@
-Importação de bibliotecas e módulos:
+Port Scanner
+Este é um script simples em Python que realiza uma varredura de portas em um host-alvo. Ele permite que você especifique um intervalo de portas a serem verificadas e o número de threads a serem usadas para a verificação em paralelo.
 
-os: Para executar comandos do sistema operacional.
-argparse: Para análise de argumentos de linha de comando.
-logging: Para registrar mensagens de logging.
-socket: Para criar sockets e realizar conexões de rede.
-requests: Para fazer solicitações HTTP.
-pyfiglet: Para exibir arte ASCII.
-Configuração do logger:
+Uso
+Clone o repositório ou faça o download do arquivo sspm.py.
 
-O logger é configurado para exibir mensagens de nível INFO no formato [NÍVEL] MENSAGEM.
-Constantes:
+Certifique-se de ter o Python 3 instalado em seu sistema.
 
-NVD_API_URL: A URL da API do NVD (National Vulnerability Database) para consultar informações sobre vulnerabilidades.
-DEFAULT_PORT_RANGE: A faixa de portas padrão para o ataque.
-Função scan_ports(host, port_range):
+Abra um terminal ou prompt de comando e navegue até o diretório onde o arquivo sps101.py está localizado.
 
-Essa função recebe um endereço de host e uma faixa de portas.
-Itera sobre cada porta na faixa especificada e tenta estabelecer uma conexão TCP com o host e a porta.
-Se a conexão for bem-sucedida (retorno 0), a porta é considerada aberta e adicionada à lista open_ports.
-Retorna a lista de portas abertas.
-Função get_active_hosts(network):
+Execute o script digitando o seguinte comando:
 
-Essa função recebe uma lista de endereços de rede.
-Itera sobre cada endereço de rede e executa o comando ping para verificar se o host está ativo.
-Se a resposta for 0, significa que o host está ativo e é adicionado à lista active_hosts.
-Retorna a lista de hosts ativos.
-Função check_vulnerabilities(service, version):
+py sps101.py
 
-Essa função recebe um serviço (no formato "tcp/porta") e uma versão.
-Faz uma solicitação GET para a API do NVD para verificar se há vulnerabilidades conhecidas para o serviço e versão especificados.
-Retorna a lista de vulnerabilidades encontradas.
-Função generate_report(results):
+Siga as instruções fornecidas para inserir as informações necessárias, como o host-alvo (sem o prefixo http:// ou https://), a porta inicial e final a serem verificadas e o número de threads a serem usadas.
 
-Essa função recebe os resultados da verificação de vulnerabilidades.
-Gera um nome de arquivo baseado no timestamp atual.
-Abre o arquivo no modo de escrita e itera sobre os resultados.
-Escreve os detalhes do host, porta e vulnerabilidades encontradas no arquivo.
-Fecha o arquivo e registra uma mensagem informando o nome do arquivo gerado.
-Função parse_arguments():
+Requisitos
+Python 3.x
+O módulo socket
 
-Essa função analisa os argumentos de linha de comando usando a biblioteca argparse.
-Define os argumentos necessários, como o alvo e a faixa de portas.
-Retorna os argumentos analisados.
-Função print_ascii_art(text):
+Exemplo:
+--------------------------------------------------
+  _____ _____   _____ __  ___  __ 
+ / ____|  __ \ / ____/_ |/ _ \/_ |
+| (___ | |__) | (___  | | | | || |
+ \___ \|  ___/ \___ \ | | | | || |
+ ____) | |     ____) || | |_| || |
+|_____/|_|    |_____/ |_|\___/ |_|v1. by mtz
 
-Essa função recebe um texto como entrada.
-Usa a biblioteca pyfiglet para gerar uma representação de arte ASCII do texto.
-Imprime a arte ASCII.
-Função main():
+Digite o alvo (sem http/https): www.exemplo.com
+Digite a porta inicial: 1
+Digite a porta final: 1000
+Digite o número de threads: 10
+[*] Iniciando varredura de portas em exemplo.com (xx.xxx.xxx.xx)...
+[*] Intervalo de portas: 1-1000
+[*] Número de threads: 10
+[+] Porta 80 aberta
+[+] Porta 443 aberta
+[*] Varredura de portas concluída.
+=--------------------------------------------------
 
-Essa função principal é responsável por executar o fluxo principal do programa.
-Analisa os argumentos de linha de comando.
-Obtém o alvo a partir do argumento e realiza a resolução de DNS, se necessário.
-Divide a faixa de portas em dois valores: start_port e end_port.
-Executa a verificação de portas abertas usando a função scan_ports().
-Executa a verificação de hosts ativos usando a função get_active_hosts().
-Para cada host ativo, itera sobre as portas abertas e executa a verificação de vulnerabilidades usando a função check_vulnerabilities().
-Adiciona os resultados à lista results e imprime a arte ASCII da requisição feita.
-Gera um relatório usando a função generate_report().
-Bloco de execução principal:
+Contribuição
+Contribuições para este projeto são bem-vindas. Se encontrar algum problema ou quiser sugerir melhorias, sinta-se à vontade para abrir um problema ou enviar uma solicitação de pull no repositório do GitHub.
 
-Verifica se o script está sendo executado diretamente (não importado como módulo).
-Chama a função main() para iniciar o programa.
+Licença
+Este projeto está licenciado sob a Licença MIT.
